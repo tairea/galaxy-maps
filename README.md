@@ -1,4 +1,4 @@
-# vue-galaxy-map
+# galaxy-map
 
 ## Project setup
 ```

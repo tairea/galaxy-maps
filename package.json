@@ -9,7 +9,10 @@
   },
   "dependencies": {
     "core-js": "^3.3.2",
-    "vue": "^2.6.10"
+    "firebase": "^7.3.0",
+    "vis-network": "^6.3.2",
+    "vue": "^2.6.10",
+    "vuefire": "^2.2.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.0.0",
@@ -29,7 +32,9 @@
       "plugin:vue/essential",
       "eslint:recommended"
     ],
-    "rules": {},
+    "rules": {
+      "no-console": "off"
+    },
     "parserOptions": {
       "parser": "babel-eslint"
     }
