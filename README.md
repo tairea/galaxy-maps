@@ -9,6 +9,7 @@ The concept was inspired by 42's education model and Intra platform: https://www
 
 ![screenshot of galaxy maps project](https://raw.githubusercontent.com/ian-vai/galaxy-maps/master/readme/screenshot-galaxy-maps.png)
 ![screenshot of the beginning of Tai Tech galaxy map](https://raw.githubusercontent.com/ian-vai/galaxy-maps/master/readme/screenshot-galaxy-map-tai-tech.png)
+![screenshot of the concept cover image](https://raw.githubusercontent.com/ian-vai/galaxy-maps/master/readme/tai-wananga-galaxy-maps.png)
 
 ## Project setup
 ```
