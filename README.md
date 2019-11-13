@@ -3,7 +3,7 @@
 This is an open source project that enables educators to map their curriculums into a "galaxy map".
 Students can then navigate the curriculum in an individualised, self-paced, gamified way.
 
-It is being created primarily for use at Tai Wānanga secondary schools in Aotearoa: https://www.taiwananga.co.nz/
+It is a work in progress, being created primarily for use at Tai Wānanga secondary schools in Aotearoa: https://www.taiwananga.co.nz/
 
 The concept was inspired by 42's education model and Intra platform: https://www.42.us.org/ 
 
