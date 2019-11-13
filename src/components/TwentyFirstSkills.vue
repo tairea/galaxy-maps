@@ -1,6 +1,6 @@
 <template>
     <div id="twentycskills">
-        <table style="position: relative; width: 500px; left: 130px;">
+        <table>
             <tr>
                 <td class="skillcell1">
                     <img title="Literacy" class="twentycskillicon"
@@ -192,6 +192,9 @@
 		width: 30%;
 		/* border-collapse:separate;  */
 		/* border-spacing: 0 1em; */
+        position: relative; 
+        width: 500px; 
+        left: 50px;
 	}
 
 	tr {
@@ -209,7 +212,7 @@
 	}
 
 	.twentycskillicon {
-		width: 30%;
+		width: 35%;
 	}
 
 	.skillcell2 {
