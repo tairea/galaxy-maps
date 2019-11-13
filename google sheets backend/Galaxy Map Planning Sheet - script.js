@@ -38,17 +38,6 @@ branch
 
 */
 
-/*
-
-PSEUDOCODE
-- loop node types (Col B) into an array
-- search this array for all "Branch" nodes, save their index
-- loop topic nodes (Col D) and put into an array
-- search this array for all non-empty topic nodes, save their index
-- loop all exercise nodes (Col E) and put into an array
-- search this array for all non-empty exercise nodes, save their index
-- use indexs to loop rows and prep data for firestore database
-*/
 
 function syncBranchAndTopics() {
 
@@ -56,192 +45,151 @@ function syncBranchAndTopics() {
                           index sheet data
     ==============================================================*/
 
-    var nodeTypes = [];
-    var topicNodes = [];
-    var exerciseNodes = [];
+  var branches = [];
   
-    //loop to map row data into array data
-    for (var i = 0; i < nodeData.length; i++) {
-        //- loop nodes types into an array
-        nodeTypes.push(nodeData[i][0])
-        topicNodes.push(nodeData[i][2])
-        exerciseNodes.push(nodeData[i][3])
+  //loop to map row data into array data
+  for (var i = 0; i < nodeData.length; i++) {
+    var nodeType = nodeData[i][0];
+    
+    switch (nodeType) {
+      case "Start":
+      case "Branch":
+        branches.push({ index: i, topics: [] });
+        break;
+      case "Topic":
+      case "Exam Major":
+      case "Project Major":
+      case "NZQA Assessment":
+      case "Evaluation Major":
+        branches[branches.length - 1].topics.push({ index: i, exercises: [] });
+        break;
+      default:
+        var lastBranchIndex = branches.length - 1;
+        var lastTopicIndex = branches[lastBranchIndex].topics.length - 1;
+        branches[lastBranchIndex].topics[lastTopicIndex].exercises.push({ index: i });
+        break;
     }
-    
-    //- get row indexs of branches
-    var branchIndices = [];
-    var element = "Branch";
-    var index = nodeTypes.indexOf(element);
-    var i = 0;
-    while (index != -1) {
-      branchIndices.push(index);
-      index = nodeTypes.indexOf(element, index + 1);
-    }
-    //Logger.log("index of branches: " + branchIndices);
-    
-    //get row indexs of topics
-    var topicIndices = [];
-    topicIndices = topicNodes.reduce(function(a, e, i) {
-      if (e != 0)
-          a.push(i);
-      return a;
-    }, []);
-    //Logger.log("index of topics: " + topicIndices);
-    
-    //get row indexs of resoures/exercises/
-    var exerciseIndices = [];
-    exerciseIndices = exerciseNodes.reduce(function(a, e, i) {
-      if (e != 0)
-          a.push(i);
-      return a;
-    }, []);
-    //Logger.log("index of topics: " + exerciseIndices);
-    
+  }
     
     /*============================================================
                 prep data for firestore database
     ==============================================================*/
-
-    var nodesObj = {}
-    nodesObj.nodes = []
-    nodesObj.edges = []
-    
-    //add branches to obj
-    for (var i = 0; i < branchIndices.length; i++) {
-      var branchNodeId = nodeData[(branchIndices[i])][6]
-      nodesObj[branchNodeId] = {
-        id: nodeData[(branchIndices[i])][6],
-        name: nodeData[(branchIndices[i])][1],
-        dependency: nodeData[(branchIndices[i])][9],
-      }
-      
-      //add topics to obj
-      for (var j = 0; j < topicIndices.length; j++) {
-        //only add topics to matching branch
-        //TODO: topics for last branch on sheet now showing. due to branchIndices[i+1].
-        if (topicIndices[j] > branchIndices[i] && topicIndices[j] < branchIndices[i+1] ) {
-          var topicNodeId = nodeData[(topicIndices[j])][6]
-          nodesObj[branchNodeId][topicNodeId] = {
-            name: nodeData[(topicIndices[j])][2],
-            dependency: nodeData[(topicIndices[j])][9],
-            nodes: [],
-            edges: []
-          };
-          //push topic nodes & edges data to galaxy level map
-          nodesObj.nodes.push({
-            id: nodeData[(topicIndices[j])][6],
-            label: nodeData[(topicIndices[j])][3],
-            title: nodeData[(topicIndices[j])][5],
-            group: nodeData[(topicIndices[j])][0],
-          })
-          nodesObj.edges.push({
-            from: nodeData[(topicIndices[j])][7],
-            to: nodeData[(topicIndices[j])][6],
-            group: "edge",
-          });
-          
-          //add exercises to obj
-          for (var k = 0; k < exerciseIndices.length; k++) {
-            if (exerciseIndices[k] > topicIndices[j] && exerciseIndices[k] < topicIndices[j+1] ) {
-              var exerciseNodeId = nodeData[(exerciseIndices[k])][6]
-              nodesObj[branchNodeId][topicNodeId][exerciseNodeId] = {
-                name: nodeData[(exerciseIndices[k])][3],
-                dependency: nodeData[(exerciseIndices[k])][9],
-              };
-              //push exercise nodes & edges data to second level map
-              nodesObj[branchNodeId][topicNodeId].nodes.push({
-                id: nodeData[(exerciseIndices[k])][6],
-                label: nodeData[(exerciseIndices[k])][3],
-                title: nodeData[(exerciseIndices[k])][5],
-                group: nodeData[(exerciseIndices[k])][0],
-              })
-              nodesObj[branchNodeId][topicNodeId].edges.push({
-                from: nodeData[(exerciseIndices[k])][7],
-                to: nodeData[(exerciseIndices[k])][6],
-                group: "edge",
-              });
-            } //end of exercise if
-          } //end of exercise loop
-         
-        } //end of topic if
-      } //end of topic loop
-        
-
-     } //end of branches loop
-    
-    
-    //Logger.log("loop generated nodesObj: ")
-    //Logger.log(nodesObj);
   
-    // sync data to firestore database
-    firestore.updateDocument("galaxy/tech", nodesObj) 
-    //Logger.log("branches added.")
+  // Add galaxy document
+  firestore.updateDocument("galaxy/tech", { id: 'tech', title: 'Tech' });
+  
+  
+  var nodes = [], edges = [];
+  
+  // Push branches
+  for (var i = 0; i < branches.length; i++) {
+    var branchIndex = branches[i].index;
+    nodes.push({
+      id: nodeData[branchIndex][6],
+      group: nodeData[branchIndex][0],
+      label: nodeData[branchIndex][1],
+      title: nodeData[branchIndex][5],
+      dependency: nodeData[branchIndex][9],
+    });
     
-}
 
-function createNodesAndEdges() {
-    /*============================================================
-                prep data for vis.js network graph
-    ==============================================================*/
-    
-    var nodes = [];
-    var edges = [];
-    
-    //1. loop all rows 
-    //2. create objs 
-    //3. push to arrays
-    
-    //1.
-    for (var x = 0; x < nodeData.length; x++) {
+    if (nodes[i].group == "Start") {
+      nodes[i].shape = "circle";
+    }
 
-      //2.
-      //create nodes
-      if (nodeData[x][0] == "Branch") {
-        var nodeObj = {
-          id: nodeData[x][6],
-          label: nodeData[x][1],
-          title: nodeData[x][5],
-          type: nodeData[x][0],
-        }
-      } else if (nodeData[x][0] == "Topic" || nodeData[x][0] == "NZQA Assessment" || nodeData[x][0] == "Project Major" || nodeData[x][0] == "Exam Major") {
-        var nodeObj = {
-          id: nodeData[x][6],
-          label: nodeData[x][2],
-          title: nodeData[x][5],
-          type: nodeData[x][0]
-        }
-      } else if (nodeData[x][0] == "Resources" || nodeData[x][0] == "Exercise" || nodeData[x][0] == "Project Minor" || nodeData[x][0] == "Exam Minor"|| nodeData[x][0] == "Resource" || nodeData[x][0] == "Evaluation") {
-        var nodeObj = {
-          id: nodeData[x][6],
-          label: nodeData[x][3],
-          title: nodeData[x][5],
-          type: nodeData[x][0],
-          dependency: nodeData[x][9],
-          cid: nodeData[x][8],
-        }
-      }
-      nodes.push(nodeObj)
-     
-      //create edges
-      var edgesObj = {
-        from: nodeData[x][7],
-        to: nodeData[x][6],
-        type: "edge",
-      }
-      edges.push(edgesObj)
-          
-    } //end of Loop
     
-    //3.
-    //sync to firestore database
-    firestore.updateDocument("galaxy/nodes", nodes) 
-    Logger.log("nodes added")
-    firestore.updateDocument("galaxy/edges", edges) 
-    Logger.log("edges added")
+    edges.push({
+      id: nodeData[branchIndex][7] + "-" + nodeData[branchIndex][6],
+      from: nodeData[branchIndex][7],
+      to: nodeData[branchIndex][6],
+      group: "edge",
+    });
+    
+    // Push topics
+    for (var j = 0; j < branches[i].topics.length; j++) {
+      var topicIndex = branches[i].topics[j].index;
+      var topicNodes = [];
+      var topicEdges = [];
       
+      // Push exercises into topics
+      //TOFIX: some branches dont have topics. so cant push exercise to them.
+      for (var k = 0; k < branches[i].topics[j].exercises.length; k++) {
+        var exerciseIndex = branches[i].topics[j].exercises[k].index;
+        topicNodes.push({
+          id: nodeData[exerciseIndex][6],
+          group: nodeData[exerciseIndex][0],
+          label: nodeData[exerciseIndex][3],
+          title: nodeData[exerciseIndex][5],
+          dependency: nodeData[exerciseIndex][9]
+        });
+        
+        topicEdges.push({
+          id: nodeData[exerciseIndex][7] + "-" + nodeData[exerciseIndex][6],
+          from: nodeData[exerciseIndex][7],
+          to: nodeData[exerciseIndex][6],
+          group: "edge",
+        });
+      }
+      
+      nodes.push({
+        id: nodeData[topicIndex][6],
+        group: nodeData[topicIndex][0],
+        label: nodeData[topicIndex][2],
+        title: nodeData[topicIndex][5],
+        dependency: nodeData[topicIndex][9],
+        nodes: topicNodes,
+        edges: topicEdges
+      });
+      
+      edges.push({
+        id: nodeData[topicIndex][7] + "-" + nodeData[topicIndex][6],
+        from: nodeData[topicIndex][7],
+        to: nodeData[topicIndex][6],
+        group: "edge",
+      });
+    }
+  }
+  
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    switch (node.group) {
+      case "Start":
+      case "Branch":
+        firestore.updateDocument("galaxy/tech/nodes/" + node.id, node);
+        break;
+      case "Topic":
+      case "Exam Major":
+      case "Project Major":
+      case "NZQA Assessment":
+      case "Evaluation Major":
+        var topicNodes = node.nodes;
+        var topicEdges = node.edges;
+        firestore.updateDocument("galaxy/tech/nodes/" + node.id, {
+          id: node.id,
+          group: node.group,
+          label: node.label,
+          title: node.title,
+          dependency: node.dependency
+        });
+        for (var j = 0; j < topicNodes.length; j++) {
+          var topicNode = topicNodes[j];
+          firestore.updateDocument("galaxy/tech/nodes/" + node.id + "/nodes/" + topicNode.id, topicNode);
+        }
+        for (var j = 0; j < topicEdges.length; j++) {
+          var topicEdge = topicEdges[j];
+          firestore.updateDocument("galaxy/tech/nodes/" + node.id + "/edges/" + topicEdge.id, topicEdge);
+        }
+        break;
+    }
+  }
+  
+  for (var i = 0; i < edges.length; i++) {
+    var edge = edges[i];
+    firestore.updateDocument("galaxy/tech/edges/" + edge.id, edge);
+  }
+    
 }
 
 function sync() {
   syncBranchAndTopics();
-  //createNodesAndEdges()
 }
