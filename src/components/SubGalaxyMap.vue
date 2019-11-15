@@ -1,17 +1,19 @@
 <template>
-	<div id="galaxymap">
+	<div id="topicmap">
 		<!-- <svg id="svgCanvas" viewbox="0 0 2000 1000" preserveaspectratio="xMinYMin slice" width="100%" height="100%" >
 			<g id="starGroup"></g>
 		</svg> -->
 
 		<!-- student panel -->
-		<TaiohiPanel></TaiohiPanel>
+		<!-- <TaiohiPanel></TaiohiPanel> -->
 
-		<!-- vis network graph (galaxy map) -->
+		<h1>{{$route.params.nodeId}}</h1>
+
+		<!-- vis network graph (topic map) -->
 		<div id="mynetwork"></div>
 
 		<div class="mission-panel-container">
-			<GalaxyMissionPanel v-bind:nodeid="clickednodeid"></GalaxyMissionPanel>
+			<SubGalaxyMissionPanel v-bind:nodeid="clickednodeid" :parentnodeid="parentNodeId"></SubGalaxyMissionPanel>
 		</div>
 
 	</div>
@@ -24,20 +26,22 @@
 	import {firestorePlugin} from 'vuefire'
 	import {STAR_DATA} from "./stars";
 
-	import TaiohiPanel from "./TaiohiPanel.vue";
-	import GalaxyMissionPanel from "./GalaxyMissionPanel.vue";
+	// import TaiohiPanel from "./TaiohiPanel.vue";
+	import SubGalaxyMissionPanel from "./SubGalaxyMissionPanel.vue";
 
 	Vue.use(firestorePlugin)
 
 	export default {
-		name: 'GalaxyMap',		
+		name: 'SubGalaxyMap',		
 		components: {
-			TaiohiPanel,
-			GalaxyMissionPanel
+			// TaiohiPanel,
+			SubGalaxyMissionPanel
 		},
 		props: [],
 		data() {
 			return {
+				parentNodeId: this.$route.params.nodeId,
+				nodeinfo: [],
 				clickednodeid: '',
 				container: '',
 				network: null,
@@ -154,26 +158,19 @@
 				},
 			}
 		},
-		firestore: {
-			nodes: db.collection("galaxy/tech/nodes"),
-			edges: db.collection("galaxy/tech/edges")
-
-			//TODO: in anoter sub topic component
-			//nodes: db.collection("galaxy/tech/nodes/ topicNodeID /nodes"),
-			//edges: db.collection("galaxy/tech/nodes/ topicNodeID /edges")
-		},
 		watch: {
 			nodes: {
 				handler: "renderGalaxyMap",
-				deep: true
+				deep: true,
 			},
 			edges: {
 				handler: "renderGalaxyMap",
-				deep: true
+				deep: true,
 			},
-			// clickednodeid: function() {
-			// 	console.log("watched: " + this.clickednodeid)
-			// }
+			'$route': {
+			   handler: "nodeIdUpdated",
+			   immediate: true,
+           	},
 		},
 		computed: {
 			graph_data() {
@@ -184,6 +181,7 @@
 			}
 		},
 		mounted() {
+
 			/*=====================================================
        					space looking stuff
 			=====================================================*/
@@ -196,6 +194,11 @@
 
 		},
 		methods: {
+			nodeIdUpdated() {
+				console.log("this.route.params.nodeId = " + this.$route.params.nodeId)
+				this.$bind("nodes",db.collection("galaxy/tech/nodes/" + this.$route.params.nodeId + "/nodes/"));
+				this.$bind("edges",db.collection("galaxy/tech/nodes/" + this.$route.params.nodeId + "/edges/"));
+            },
 
 			renderGalaxyMap() {
 
@@ -223,12 +226,7 @@
 				
 				this.network.on("selectNode", (params) => {
 
-					//check it see if node clicked is a 'topic' type node. if it is, route to its page
-					if (params.nodes[0].includes("top")) {
-						this.$router.push("/map/"+params.nodes[0])
-					}
-
-					//get id of clicked node to prop into Galaxy Mission Panel component
+					//get id of clicked node to prop into Sub Mission Panel component
 					this.clickednodeid = params.nodes[0];
 					console.log("clicked: " + this.clickednodeid)
 					
@@ -259,6 +257,21 @@
 				this.network.on("deselectNode", (params) => {
 					missionPanelElem.classList.toggle("show");
 				});
+
+				//change color style when clicked
+				// var nodeID = params['nodes']['0'];
+				// if (nodeID) {
+				// 	var clickedNode = nodes.get(nodeID);
+				// 	clickedNode.color = {
+				// 	border: '#000000',
+				// 	background: '#000000',
+				// 	highlight: {
+				// 		border: '#2B7CE9',
+				// 		background: '#D2E5FF'
+				// 	}
+				// 	}
+				// 	nodes.update(clickedNode);
+				// }
 			},
 
 			createNightSky({
@@ -304,14 +317,15 @@
 
 
 <style scoped>
-	#galaxymap {
-		display: flex;
+	#topicmap {
 		width: 100vw;
 		height: 100vh;
 		margin: 0;
 		background: #141E30;
 		background: -webkit-linear-gradient(135deg, #141E30 60%, #243B55 150%);
 		background: linear-gradient(85deg, #141E30 60%, #243B55 150%);
+
+		display: flex;
 	}
 
 	#mynetwork {

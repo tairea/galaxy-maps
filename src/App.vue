@@ -1,18 +1,18 @@
 <template>
   <div id="app">
-    <GalaxyMap />
+    <router-view/>
   </div>
 </template>
 
 <script>
-import GalaxyMap from './components/GalaxyMap.vue'
 
 export default {
   name: 'app',
   components: {
-    GalaxyMap
+    
   }
 }
+
 </script>
 
 <style>

@@ -1,9 +1,10 @@
 <template>
-    <div id="mission-panel">
+    <div id="mission-panel" v-if="nodeinfo != null">
         <h1>Mission Panel</h1>
         <br>
         <br>
         <h3>{{nodeid}}</h3>
+        <h3>{{nodeinfo.label}}</h3>
     </div>
 </template>
 
@@ -15,33 +16,34 @@
 	Vue.use(firestorePlugin)
 
 	export default {
-		name: 'MissionPanel',
+		name: 'GalaxyMissionPanel',
         components: {
             
         },
         props: ['nodeid'],
 		data() {
 			return {
-                clickednode: this.nodeid
+                nodeinfo: [],
 			}
 		},
 		firestore: {
             
 		},
 		watch: {
-            nodeid: function() {
-                console.log("node id is (from mission panel): " + this.nodeid)
-            },
+           nodeid: {
+			   handler: "nodeIdUpdated"
+           }
 		},
 		computed: {
 
 		},
 		mounted() {
-            console.log("from mission panel: " + this.nodeid)
-        
+
         },
 		methods: {
-
+            nodeIdUpdated() {
+                this.$bind("nodeinfo",db.collection("galaxy/tech/nodes/").doc(this.nodeid));
+            }
 		}
 	}
 </script>

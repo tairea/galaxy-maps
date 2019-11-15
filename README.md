@@ -1,9 +1,11 @@
-# galaxy-map
+# galaxy-maps
 
-This is an open source project that enables educators to map their curriculums into a "galaxy map".
-Students can then navigate the curriculum in an individualised, self-paced, gamified way.
+This project enables kaiako (teachers) to map their curriculums into a "Galaxy Map".
+Taiohi (students) can then navigate the curriculum in an individualised, self-paced, gamified way.
 
-It is a work in progress, being created primarily for use at Tai Wānanga secondary schools in Aotearoa: https://www.taiwananga.co.nz/
+Like their ancestors that used the stars to navigate the seas, using these Galaxy Maps taiohi can navigate their learning.
+
+This is a work in progress, being created primarily for use at Tai Wānanga secondary schools in Aotearoa: https://www.taiwananga.co.nz/
 
 The concept was inspired by 42's education model and Intra platform: https://www.42.us.org/ 
 
