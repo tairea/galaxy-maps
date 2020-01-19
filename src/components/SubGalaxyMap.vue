@@ -7,7 +7,13 @@
 		<!-- student panel -->
 		<!-- <TaiohiPanel></TaiohiPanel> -->
 
-		<h1>{{$route.params.nodeId}}</h1>
+		<div style="display: flex; justify-content: space-between; width: 100%; z-index: 999; height: 0px;">
+			<div class="top-padding">
+				<h1>{{branchinfo.label}}</h1>
+				<h1 style="color: white; font-size: 2.2em">{{nodeinfo.label}}</h1>
+			</div>
+			<router-link to="/" class="top-padding">Back to Galaxy</router-link>
+		</div>
 
 		<!-- vis network graph (topic map) -->
 		<div id="mynetwork"></div>
@@ -24,7 +30,7 @@
 	import Vue from 'vue'
 	import {db} from "./firebaseInit";
 	import {firestorePlugin} from 'vuefire'
-	import {STAR_DATA} from "./stars";
+	// import {STAR_DATA} from "./stars";
 
 	// import TaiohiPanel from "./TaiohiPanel.vue";
 	import SubGalaxyMissionPanel from "./SubGalaxyMissionPanel.vue";
@@ -43,6 +49,7 @@
 				parentNodeId: this.$route.params.nodeId,
 				nodeinfo: [],
 				clickednodeid: '',
+				branchinfo: '',
 				container: '',
 				network: null,
 				galaxy: [],
@@ -194,8 +201,15 @@
 
 		},
 		methods: {
+			getBranch() {
+				
+			},
 			nodeIdUpdated() {
 				console.log("this.route.params.nodeId = " + this.$route.params.nodeId)
+				var branchId = this.$route.params.nodeId.substring(0, 7);
+				branchId += "bra"
+				this.$bind("nodeinfo",db.collection("galaxy/tech/nodes/").doc(this.$route.params.nodeId));
+				this.$bind("branchinfo",db.collection("galaxy/tech/nodes/").doc(branchId));
 				this.$bind("nodes",db.collection("galaxy/tech/nodes/" + this.$route.params.nodeId + "/nodes/"));
 				this.$bind("edges",db.collection("galaxy/tech/nodes/" + this.$route.params.nodeId + "/edges/"));
             },
@@ -234,6 +248,9 @@
 					var options = {
 						scale: 1, 
 						locked: true, 
+						offset : {
+							y: -260,
+						},
 						animation: {
 							duration: 2000,
 							easing: "easeInOutQuart"
@@ -317,6 +334,11 @@
 
 
 <style scoped>
+	.top-padding {
+		padding: 10px 25px;
+		text-align: left;
+	}
+
 	#topicmap {
 		width: 100vw;
 		height: 100vh;
@@ -326,6 +348,7 @@
 		background: linear-gradient(85deg, #141E30 60%, #243B55 150%);
 
 		display: flex;
+		overflow: hidden;
 	}
 
 	#mynetwork {
@@ -337,17 +360,21 @@
 	}
 
 	.mission-panel-container {
-		width: 25%;
-		height: 100%;
+		width: 85%;
+		height: 65%;
 		background-color: rgb(245, 245, 245);
 		position: absolute;
 		transition: all 0.5s;
-		top: 0;
-		right: -30%;
+		bottom: -65%;
+		left: 0; 
+		right: 0; 
+		margin-left: auto; 
+		margin-right: auto; 
+		/* right: -30%; */
 	}
 
 	.mission-panel-container.show {
-		right: 0%;
+		bottom: 0;
 	}
 
 

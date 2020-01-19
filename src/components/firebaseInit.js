@@ -14,3 +14,4 @@ var firebaseConfig = {
 
 export const firebaseApp = firebase.initializeApp(firebaseConfig)
 export const db = firebaseApp.firestore()
+export const studentsDb = db.collection("students");

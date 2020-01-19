@@ -2,7 +2,12 @@
     <div id="taiohi-panel">
         
         <div class="profile-container">
-            <img id="profile-pic" v-bind:src="require('@/assets/student_photos/meelah.png')" />
+			<img
+				v-if="student.given_name"
+				id="profile-pic"
+				v-bind:src="require('@/assets/student_photos/' + formatStudentName(student.given_name) + '.png')"
+			/>
+			<img v-else  id="profile-pic" v-bind:src="require('@/assets/student_photos/placeholder-avatar.png')" />
         </div>
         <div class="text-container">
             <h3>1300</h3>
@@ -12,8 +17,6 @@
         <TwentyFirstSkills/>
 
     </div>
-
-
 </template>
 
 <script>
@@ -27,7 +30,7 @@
 
 	export default {
 		name: 'TaiohiPanel',
-        props: {},
+        props: ["student"],
         components: {
             TwentyFirstSkills
         },
@@ -49,7 +52,10 @@
         
         },
 		methods: {
-
+			formatStudentName: function(name) {
+				name = name.replace(/\s/g, "");
+				return name.toLowerCase();
+			}
 		}
 	}
 </script>
@@ -82,6 +88,9 @@
 	.profile-container {
 		margin-top: 50px;
 		width: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	#profile-pic {

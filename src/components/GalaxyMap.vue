@@ -4,14 +4,13 @@
 			<g id="starGroup"></g>
 		</svg> -->
 
-		<!-- student panel -->
-		<TaiohiPanel></TaiohiPanel>
+		<TaiohiPanel :student="students[0]"></TaiohiPanel>
 
 		<!-- vis network graph (galaxy map) -->
 		<div id="mynetwork"></div>
 
 		<div class="mission-panel-container">
-			<GalaxyMissionPanel v-bind:nodeid="clickednodeid"></GalaxyMissionPanel>
+			<GalaxyMissionPanel :nodeid="clickednodeid"></GalaxyMissionPanel>
 		</div>
 
 	</div>
@@ -20,9 +19,10 @@
 <script>
 	import vis from 'vis-network'
 	import Vue from 'vue'
+	import firebase from "firebase";
 	import {db} from "./firebaseInit";
 	import {firestorePlugin} from 'vuefire'
-	import {STAR_DATA} from "./stars";
+	// import {STAR_DATA} from "./stars";
 
 	import TaiohiPanel from "./TaiohiPanel.vue";
 	import GalaxyMissionPanel from "./GalaxyMissionPanel.vue";
@@ -38,6 +38,11 @@
 		props: [],
 		data() {
 			return {
+				currentUser: null,
+				students: [],
+				// student: null,
+				loadedStudents: false,
+
 				clickednodeid: '',
 				container: '',
 				network: null,
@@ -45,45 +50,26 @@
 				nodes: [],
 				edges: [],
 				options: {
-					// manipulation: {
-					//     enabled: true,
-					//     initiallyActive: true,
-					//     addEdge: function(edgeData, callback) {
-					//         callback(edgeData);
-					//     }
-					// },
 					physics: {
-						"barnesHut": {
-						"gravitationalConstant": -28400,
-						"centralGravity": 1.15,
-						"springLength": 135,
-						"springConstant": 0.36,
-						"damping": 0.1,
-						"avoidOverlap": 1
+
+						"repulsion": {
+							"centralGravity": 0,
+							"springLength": 300,
+							"springConstant": 0.35,
+							"nodeDistance": 490
 						},
-						"maxVelocity": 34,
-						"minVelocity": 0.95
+						"maxVelocity": 24,
+						"minVelocity": 0.23,
+						"solver": "repulsion"
 					},
 					layout: {
-						// randomSeed: 68,
+						randomSeed: 12,
 						improvedLayout: true,
 					},
 					nodes: {
 						physics: true,
 						shape: 'dot',
 						size: 15,
-						color: {
-							// border: '#ffffff',
-							// background: '#f1f2f6',
-							// highlight: {
-							// 	border: '#70a1ff',
-							// 	background: '#1e90ff'
-							// },
-							// hover: {
-							// 	border: '#7bed9f',
-							// 	background: '#2ed573'
-							// }
-						},
 						font: {
 							color: '#ffffff',
 							size: 25, // px
@@ -141,26 +127,12 @@
 						keyboard: true,
 						tooltipDelay: 3600000,
 					},
-
-					// configure: {
-					// 	enabled: true,
-					// 	filter: function (option, path) {
-					// 				return path.indexOf('physics') !== -1;
-					// 			},
-					// 	// container: document.getElementById("settings"),
-					// 	showButton: true
-					// }
-
 				},
 			}
 		},
 		firestore: {
 			nodes: db.collection("galaxy/tech/nodes"),
 			edges: db.collection("galaxy/tech/edges")
-
-			//TODO: in anoter sub topic component
-			//nodes: db.collection("galaxy/tech/nodes/ topicNodeID /nodes"),
-			//edges: db.collection("galaxy/tech/nodes/ topicNodeID /edges")
 		},
 		watch: {
 			nodes: {
@@ -171,9 +143,17 @@
 				handler: "renderGalaxyMap",
 				deep: true
 			},
-			// clickednodeid: function() {
-			// 	console.log("watched: " + this.clickednodeid)
-			// }
+			currentUser(user) {
+				this.$bind(
+					"students",
+					db.collection("students").where("email", "array-contains", user.email)
+					// studentsDb.orderBy("school_year")
+				);
+			},
+			students(students) {
+				console.log("user has access to:", students);
+				this.$set(this, "loadedStudents", true);
+			}
 		},
 		computed: {
 			graph_data() {
@@ -184,6 +164,11 @@
 			}
 		},
 		mounted() {
+			this.$set(this, "currentUser", firebase.auth().currentUser);
+			// eslint-disable-next-line
+			console.log("user is:", firebase.auth().currentUser.displayName);
+
+
 			/*=====================================================
        					space looking stuff
 			=====================================================*/
@@ -206,7 +191,7 @@
 					return;
 				}
 
-				console.log(this.graph_data)
+				// console.log(this.graph_data)
 
 				/*================================================
 							render galaxy map
@@ -261,42 +246,52 @@
 				});
 			},
 
-			createNightSky({
-				container,
-				debug
-			}) {
-				STAR_DATA.forEach((data, index) => {
-					const star = this.createStar(data, index, debug);
-					container.appendChild(star);
-				})
-			},
-			createStar({
-				x,
-				y
-			}, index, debug) {
-				const starInstance = document.createElementNS("http://www.w3.org/2000/svg", 'g');
-				starInstance.classList.add('star-instance');
-				starInstance.setAttribute('transform', `translate(${x} ${y})`);
+			// createNightSky({
+			// 	container,
+			// 	debug
+			// }) {
+			// 	STAR_DATA.forEach((data, index) => {
+			// 		const star = this.createStar(data, index, debug);
+			// 		container.appendChild(star);
+			// 	})
+			// },
+			// createStar({
+			// 	x,
+			// 	y
+			// }, index, debug) {
+			// 	const starInstance = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+			// 	starInstance.classList.add('star-instance');
+			// 	starInstance.setAttribute('transform', `translate(${x} ${y})`);
 
-				const radius = debug ? 10 : 1;
-				const starReference = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+			// 	const radius = debug ? 10 : 1;
+			// 	const starReference = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
 
-				starReference.setAttribute('r', radius);
-				starReference.classList.add('star');
+			// 	starReference.setAttribute('r', radius);
+			// 	starReference.classList.add('star');
 
-				const delay = index * 100 + 500 * Math.random();
+			// 	const delay = index * 100 + 500 * Math.random();
 
-				const duration = 3000 + Math.random() * 4000;
-				const brightness = 0.7 + Math.random() * 0.3;
+			// 	const duration = 3000 + Math.random() * 4000;
+			// 	const brightness = 0.7 + Math.random() * 0.3;
 
-				starReference.style.setProperty('--star-animation-delay', `${delay}ms`);
-				starReference.style.setProperty('--star-animation-duration', `${duration}ms`);
-				starReference.style.setProperty('--star-animation-glow-duration', `10000ms`);
-				starReference.style.setProperty('--star-brightness', `${brightness}`);
+			// 	starReference.style.setProperty('--star-animation-delay', `${delay}ms`);
+			// 	starReference.style.setProperty('--star-animation-duration', `${duration}ms`);
+			// 	starReference.style.setProperty('--star-animation-glow-duration', `10000ms`);
+			// 	starReference.style.setProperty('--star-brightness', `${brightness}`);
 
-				starInstance.appendChild(starReference);
-				return starInstance;
-			},
+			// 	starInstance.appendChild(starReference);
+			// 	return starInstance;
+			// },
+
+			logout: function() {
+				firebase
+					.auth()
+					.signOut()
+					.then(() => {
+					alert("signed out");
+					this.$router.go({ path: this.$router.path });
+					});
+			}
 		}
 	}
 </script>
