@@ -10,7 +10,7 @@
 		<div id="mynetwork"></div>
 
 		<div class="mission-panel-container">
-			<GalaxyMissionPanel :nodeid="clickednodeid"></GalaxyMissionPanel>
+			<GalaxyMissionPanel :nodeid="clickednodeid" :student="students[0]" @unlockNode="unlockNode($event)"></GalaxyMissionPanel>
 		</div>
 
 	</div>
@@ -42,8 +42,9 @@
 				students: [],
 				// student: null,
 				loadedStudents: false,
-
+				studentIsLoaded: false,
 				clickednodeid: '',
+				studentUnlocked: [],
 				container: '',
 				network: null,
 				galaxy: [],
@@ -132,7 +133,7 @@
 		},
 		firestore: {
 			nodes: db.collection("galaxy/tech/nodes"),
-			edges: db.collection("galaxy/tech/edges")
+			edges: db.collection("galaxy/tech/edges"),
 		},
 		watch: {
 			nodes: {
@@ -153,13 +154,14 @@
 			students(students) {
 				console.log("user has access to:", students);
 				this.$set(this, "loadedStudents", true);
+				this.renderGalaxyMap();
 			}
 		},
 		computed: {
 			graph_data() {
 				return {
-					nodes: this.nodes,
-					edges: this.edges
+					nodes: new vis.DataSet(this.nodes),
+					edges: new vis.DataSet(this.edges)
 				}
 			}
 		},
@@ -185,13 +187,48 @@
 			renderGalaxyMap() {
 
 				/*================================================
-					wait to get node & edges data from firestore
+					wait to get node & edges & student data from firestore
 				================================================*/
-				if (this.graph_data.nodes.length == 0 || this.graph_data.edges.length == 0) {
+				if (this.graph_data.nodes.length == 0 || this.graph_data.edges.length == 0 || this.loadedStudents == false) {
 					return;
 				}
 
-				// console.log(this.graph_data)
+				//ONLY SHOW GRAPH_DATA NODES THAT STUDENT HAS UNLOCKED & COMPLETED
+				//CHECK TOPICS UNLOCKED
+				let studentUnlocked = db.collection("students/" + this.students[0].nsn + "/galaxyMapsUnlocked").get().then((querySnapshot) => {
+					querySnapshot.forEach((doc) => {
+						// doc.data() is never undefined for query doc snapshots
+						// console.log(doc.id, " => ", doc.data());
+						if (doc.data().hidden == false) {
+							this.graph_data.nodes.update({
+								id: doc.id, 
+								hidden: false, 
+								physics: true,
+								shape: 'dot', 
+								size: 15,
+								font: {
+									color: '#ffffff',
+									size: 25, // px
+									face: 'arial',
+									background: 'none',
+									strokeWidth: 0, // px
+									strokeColor: '#ffffff',
+									align: 'center',
+									multi: false,
+									vadjust: 0,
+									bold: {
+										color: '#343434',
+										size: 14, // px
+										face: 'arial',
+										vadjust: 0,
+										mod: 'bold'
+									},
+								}
+							})
+						}
+					});
+				});
+
 
 				/*================================================
 							render galaxy map
@@ -201,16 +238,15 @@
 
 				var missionPanelElem = document.querySelector(".mission-panel-container")
 
-
 				/*================================================
 							node click events
 				================================================*/
 				
 				this.network.on("selectNode", (params) => {
-
+					let nsn = this.students[0].nsn
 					//check it see if node clicked is a 'topic' type node. if it is, route to its page
 					if (params.nodes[0].includes("top")) {
-						this.$router.push("/map/"+params.nodes[0])
+						this.$router.push({ path: "/map/"+params.nodes[0], query: { nsn } })
 					}
 
 					//get id of clicked node to prop into Galaxy Mission Panel component
@@ -246,43 +282,6 @@
 				});
 			},
 
-			// createNightSky({
-			// 	container,
-			// 	debug
-			// }) {
-			// 	STAR_DATA.forEach((data, index) => {
-			// 		const star = this.createStar(data, index, debug);
-			// 		container.appendChild(star);
-			// 	})
-			// },
-			// createStar({
-			// 	x,
-			// 	y
-			// }, index, debug) {
-			// 	const starInstance = document.createElementNS("http://www.w3.org/2000/svg", 'g');
-			// 	starInstance.classList.add('star-instance');
-			// 	starInstance.setAttribute('transform', `translate(${x} ${y})`);
-
-			// 	const radius = debug ? 10 : 1;
-			// 	const starReference = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
-
-			// 	starReference.setAttribute('r', radius);
-			// 	starReference.classList.add('star');
-
-			// 	const delay = index * 100 + 500 * Math.random();
-
-			// 	const duration = 3000 + Math.random() * 4000;
-			// 	const brightness = 0.7 + Math.random() * 0.3;
-
-			// 	starReference.style.setProperty('--star-animation-delay', `${delay}ms`);
-			// 	starReference.style.setProperty('--star-animation-duration', `${duration}ms`);
-			// 	starReference.style.setProperty('--star-animation-glow-duration', `10000ms`);
-			// 	starReference.style.setProperty('--star-brightness', `${brightness}`);
-
-			// 	starInstance.appendChild(starReference);
-			// 	return starInstance;
-			// },
-
 			logout: function() {
 				firebase
 					.auth()
@@ -291,6 +290,64 @@
 					alert("signed out");
 					this.$router.go({ path: this.$router.path });
 					});
+			},
+
+			unlockNode($event) {
+				let idToUnlock = $event
+				console.log("unlocking: " + idToUnlock)
+
+				//TODO: unlock more than one topic based on if their dependency is the branch.
+
+				// update node to hidden:false (only on client side)
+				this.graph_data.nodes.update({
+								id: idToUnlock, 
+								hidden: false, 
+								physics: true,
+								shape: 'dot', 
+								size: 15,
+								font: {
+									color: '#ffffff',
+									size: 25, // px
+									face: 'arial',
+									background: 'none',
+									strokeWidth: 0, // px
+									strokeColor: '#ffffff',
+									align: 'center',
+									multi: false,
+									vadjust: 0,
+									bold: {
+										color: '#343434',
+										size: 14, // px
+										face: 'arial',
+										vadjust: 0,
+										mod: 'bold'
+									},
+								}
+							})
+
+				// this.$unbind("nodes", false)
+
+				// update node to hidden:false (in database)
+				db.collection("students/" + this.students[0].nsn + "/galaxyMapsUnlocked/").doc(idToUnlock).set({
+					id: idToUnlock,
+					hidden: false,
+					tasksCompleted: '',
+				})
+
+				// zoom on unlocked node
+				var options = {
+					scale: 1, 
+					locked: true, 
+					animation: {
+						duration: 2000,
+						easing: "easeInOutQuart"
+					}
+				}
+				this.network.focus(idToUnlock,options)
+
+				// hide mission panel
+				// var missionPanelElem = document.querySelector(".mission-panel-container")
+				// missionPanelElem.classList.toggle("show");
 			}
 		}
 	}

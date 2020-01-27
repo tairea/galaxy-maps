@@ -5,10 +5,10 @@
 			<h3 style="display:flex; justify-content: center; align-items: center; padding-right: 25px;">{{exercise.kaitiaki}}</h3>
 		</div>
 		<div style="display: flex;">
-			<div v-for="task in exercise.tasks" :key="task.index" class="objective-card">
+			<div v-for="task in exercise.tasks" :key="task.index" class="objective-card" :class="{ 'green': completedTasks[exercise.tasks.indexOf(task)] }">
 				<h2>Objective {{exercise.tasks.indexOf(task)}}:</h2>
-				{{task}}
-				<input type="checkbox" :name="task.index" value="exericse.exerciseId + '.obj.' + task.index">
+					{{task}}
+				<input type="checkbox" :name="task.index" v-model="completedTasks[exercise.tasks.indexOf(task)]">
 			</div>
 		</div>
     </div>
@@ -26,11 +26,14 @@
         components: {
             
         },
-        props: ['nodeid', 'parentnodeid'],
+        props: ['nodeid', 'parentnodeid', 'studentid'],
 		data() {
 			return {
 				nodeinfo: [],
 				exercise: '',
+				student: '',
+				studentsExercise: '',
+				completedTasks: []
 			}
 		},
 		firestore: {
@@ -39,19 +42,56 @@
 		watch: {
            nodeid: {
 			   handler: "nodeIdUpdated"
-           }
+		   },
+		   completedTasks: {
+			   handler: "taskUpdated"
+		   }
 		},
 		computed: {
 
 		},
 		mounted() {
-
+			
         },
 		methods: {
+			taskTest() {
+				console.log("watcher " + this.completedTasks)
+			},
             nodeIdUpdated() {
 				this.$bind("nodeinfo",db.collection("galaxy/tech/nodes/" + this.parentnodeid + "/nodes/").doc(this.nodeid));
 				this.$bind("exercise",db.collection("exercises/").doc(this.nodeid));
-            }
+				this.$bind("studentsExercise",db.collection("students/" + this.studentid + "/galaxyMapsUnlocked/").doc(this.nodeid))
+				.then(() => {
+					// sync completedTasks with database tasksCompleted
+					this.completedTasks = this.studentsExercise.tasksCompleted
+				});
+			},
+			taskUpdated() {
+				let totalTasks = this.exercise.tasks.length
+
+				console.log("syncing this to db:")
+				console.log(this.completedTasks)
+
+				// sync change to firebase db
+				db.collection("students/" + this.studentid + "/galaxyMapsUnlocked/").doc(this.nodeid).set({
+					totalTasks: totalTasks,
+					tasksCompleted: this.completedTasks
+				})
+				.then(function() {
+					console.log("Document successfully written!");
+				})
+				.catch(function(error) {
+					console.error("Error writing document: ", error);
+				});
+
+				/*
+				// confirm tasks all are checked
+				var ticked = document.querySelectorAll('input[type=checkbox]:checked')
+				if (ticked.length == this.exercise.tasks.length) {
+					console.log("completed")
+				}
+				*/
+			}
 		}
 	}
 </script>
@@ -80,10 +120,10 @@
 		align-items: center;
 	}
 
-	input {
-		width: 30px;
-		height: 30px;
+	.green {
+		background-color: #c0ffb3;
 	}
+
 
 </style>
 

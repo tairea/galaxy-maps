@@ -4,7 +4,8 @@
         <br>
         <br>
         <h3>{{nodeid}}</h3>
-        <h3>{{nodeinfo.label}}</h3>
+		<h3>{{nodeinfo.label}}</h3>
+		<button @click="unlockTopic">Start {{nodeinfo.label}}</button>
     </div>
 </template>
 
@@ -43,7 +44,17 @@
 		methods: {
             nodeIdUpdated() {
                 this.$bind("nodeinfo",db.collection("galaxy/tech/nodes/").doc(this.nodeid));
-            }
+			},
+			unlockTopic() {
+				let nextTopicNodeId = this.nodeid.replace("bra", "top.01")
+				console.log("node to unlock is: " + nextTopicNodeId)
+				this.$emit('unlockNode', nextTopicNodeId)
+				
+				// update firebase to nextTopicNodeId: {hidden: false}
+				// db.collection("galaxy/tech/nodes/").doc(nextTopicNodeId).update({hidden: false}).then(function() {
+				// 	console.log("Document successfully written!");
+				// })
+			}
 		}
 	}
 </script>
@@ -59,6 +70,12 @@
 		z-index: 999;
 	}
 
+	button {
+		margin-top: 50px;
+		background-color: orange;
+		padding: 20px;
+		font-size: 1.1em;
+	}
 
 </style>
 

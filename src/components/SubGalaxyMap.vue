@@ -19,7 +19,7 @@
 		<div id="mynetwork"></div>
 
 		<div class="mission-panel-container">
-			<SubGalaxyMissionPanel v-bind:nodeid="clickednodeid" :parentnodeid="parentNodeId"></SubGalaxyMissionPanel>
+			<SubGalaxyMissionPanel :nodeid="clickednodeid" :parentnodeid="parentNodeId" :studentid="studentsNsn"></SubGalaxyMissionPanel>
 		</div>
 
 	</div>
@@ -47,8 +47,9 @@
 		data() {
 			return {
 				parentNodeId: this.$route.params.nodeId,
+				studentsNsn: this.$route.query.nsn,
 				nodeinfo: [],
-				clickednodeid: '',
+				clickednodeid: null,
 				branchinfo: '',
 				container: '',
 				network: null,
@@ -205,7 +206,12 @@
 				
 			},
 			nodeIdUpdated() {
+				// nodeId and studentsNsn data passed in via router
 				console.log("this.route.params.nodeId = " + this.$route.params.nodeId)
+				console.log("this.route.query.nsn = " + this.$route.query.nsn)
+				this.parentNodeId = this.$route.params.nodeId
+				this.studentsNsn = this.$route.query.nsn
+				// get branch data from firebase
 				var branchId = this.$route.params.nodeId.substring(0, 7);
 				branchId += "bra"
 				this.$bind("nodeinfo",db.collection("galaxy/tech/nodes/").doc(this.$route.params.nodeId));
@@ -222,8 +228,6 @@
 				if (this.graph_data.nodes.length == 0 || this.graph_data.edges.length == 0) {
 					return;
 				}
-
-				console.log(this.graph_data)
 
 				/*================================================
 							render galaxy map
@@ -291,42 +295,6 @@
 				// }
 			},
 
-			createNightSky({
-				container,
-				debug
-			}) {
-				STAR_DATA.forEach((data, index) => {
-					const star = this.createStar(data, index, debug);
-					container.appendChild(star);
-				})
-			},
-			createStar({
-				x,
-				y
-			}, index, debug) {
-				const starInstance = document.createElementNS("http://www.w3.org/2000/svg", 'g');
-				starInstance.classList.add('star-instance');
-				starInstance.setAttribute('transform', `translate(${x} ${y})`);
-
-				const radius = debug ? 10 : 1;
-				const starReference = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
-
-				starReference.setAttribute('r', radius);
-				starReference.classList.add('star');
-
-				const delay = index * 100 + 500 * Math.random();
-
-				const duration = 3000 + Math.random() * 4000;
-				const brightness = 0.7 + Math.random() * 0.3;
-
-				starReference.style.setProperty('--star-animation-delay', `${delay}ms`);
-				starReference.style.setProperty('--star-animation-duration', `${duration}ms`);
-				starReference.style.setProperty('--star-animation-glow-duration', `10000ms`);
-				starReference.style.setProperty('--star-brightness', `${brightness}`);
-
-				starInstance.appendChild(starReference);
-				return starInstance;
-			},
 		}
 	}
 </script>

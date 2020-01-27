@@ -4,6 +4,7 @@ import VueRouter from 'vue-router';
 import GalaxyMap from "@/components/GalaxyMap.vue";
 import SubGalaxyMap from "@/components/SubGalaxyMap.vue";
 import Login from "@/components/Login.vue";
+import MapCreator from "@/components/MapCreator.vue";
 
 Vue.use(VueRouter);
 
@@ -11,6 +12,7 @@ const routes = [
     {path: "/", component: GalaxyMap},
     {path: "/map/:nodeId", component: SubGalaxyMap},
     {path: "/login", component: Login},
+    {path: "/creator", component: MapCreator},
 ]
 
 const router = new VueRouter({
