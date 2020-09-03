@@ -22,7 +22,7 @@
 	Vue.use(firestorePlugin)
 
 	export default {
-		name: 'MissionPanel',
+		name: 'SubGalaxyMissionPanel',
         components: {
             
         },
@@ -60,37 +60,50 @@
             nodeIdUpdated() {
 				this.$bind("nodeinfo",db.collection("galaxy/tech/nodes/" + this.parentnodeid + "/nodes/").doc(this.nodeid));
 				this.$bind("exercise",db.collection("exercises/").doc(this.nodeid));
-				this.$bind("studentsExercise",db.collection("students/" + this.studentid + "/galaxyMapsUnlocked/").doc(this.nodeid))
+				this.$bind("studentsExercise",db.collection("students/" + this.studentid + "/studentGalaxyMaps/").doc(this.nodeid))
 				.then(() => {
 					// sync completedTasks with database tasksCompleted
-					this.completedTasks = this.studentsExercise.tasksCompleted
+					if (this.studentsExercise.tasksCompleted) {
+						this.completedTasks = this.studentsExercise.tasksCompleted
+					} 
+					// if no completed tasks set all tasks to false
+					else {
+						for (var i = 0; i < this.exercise.tasks.length; i++) {
+							this.completedTasks.push(false)
+						}
+					}
 				});
 			},
 			taskUpdated() {
 				let totalTasks = this.exercise.tasks.length
 
-				console.log("syncing this to db:")
-				console.log(this.completedTasks)
-
-				// sync change to firebase db
-				db.collection("students/" + this.studentid + "/galaxyMapsUnlocked/").doc(this.nodeid).set({
+				// sync task change to firebase db
+				db.collection("students/" + this.studentid + "/studentGalaxyMaps/").doc(this.nodeid).set({
 					totalTasks: totalTasks,
 					tasksCompleted: this.completedTasks
 				})
-				.then(function() {
-					console.log("Document successfully written!");
-				})
-				.catch(function(error) {
-					console.error("Error writing document: ", error);
-				});
-
-				/*
-				// confirm tasks all are checked
-				var ticked = document.querySelectorAll('input[type=checkbox]:checked')
-				if (ticked.length == this.exercise.tasks.length) {
-					console.log("completed")
+				
+				// confirm tasks are all checked/completed
+				let numOfCompletedTasks = 0;
+				for(var i = 0; i < totalTasks; i++) {
+					if(this.completedTasks[i]) {
+						numOfCompletedTasks++;
+					}
 				}
-				*/
+
+				// check clientside task count matches db task count.
+				if (numOfCompletedTasks == this.studentsExercise.totalTasks) {
+					console.log("exericse is completed")
+					db.collection("students/" + this.studentid + "/studentGalaxyMaps/").doc(this.nodeid).update({
+						exerciseCompleted: true
+					})
+				} else {
+					console.log("exericse is not yet completed")
+					db.collection("students/" + this.studentid + "/studentGalaxyMaps/").doc(this.nodeid).update({
+						exerciseCompleted: false
+					})
+				}
+				
 			}
 		}
 	}

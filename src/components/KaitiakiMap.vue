@@ -4,13 +4,32 @@
 			<g id="starGroup"></g>
 		</svg> -->
 
-		<TaiohiPanel :student="students[0]"></TaiohiPanel>
+		<KaitiakiPanel :teacher="teachers[0]"/>
+
+		<!-- MANIPULATION ADDON -->
+		<div id="network-popUp">
+			<span id="operation">node</span> <br />
+			<table style="margin:auto;">
+				<tbody>
+				<tr>
+					<td>id</td>
+					<td><input id="node-id" value="new value" /></td>
+				</tr>
+				<tr>
+					<td>label</td>
+					<td><input id="node-label" value="new value" /></td>
+				</tr>
+				</tbody>
+			</table>
+			<input type="button" value="save" id="saveButton" />
+			<input type="button" value="cancel" id="cancelButton" />
+		</div>
 
 		<!-- vis network graph (galaxy map) -->
 		<div id="mynetwork"></div>
 
 		<div class="mission-panel-container">
-			<GalaxyMissionPanel :nodeid="clickednodeid" :student="students[0]" @unlockNode="unlockNode($event)"></GalaxyMissionPanel>
+			<GalaxyMissionPanel ></GalaxyMissionPanel>
 		</div>
 
 	</div>
@@ -24,22 +43,22 @@
 	import {firestorePlugin} from 'vuefire'
 	// import {STAR_DATA} from "./stars";
 
-	import TaiohiPanel from "./TaiohiPanel.vue";
+	import KaitiakiPanel from "./KaitiakiPanel.vue";
 	import GalaxyMissionPanel from "./GalaxyMissionPanel.vue";
 
 	Vue.use(firestorePlugin)
 
 	export default {
-		name: 'GalaxyMap',		
+		name: 'KaitiakiMap',		
 		components: {
-			TaiohiPanel,
+			KaitiakiPanel,
 			GalaxyMissionPanel
 		},
 		props: [],
 		data() {
 			return {
 				currentUser: null,
-				students: [],
+				teachers: [],
 				// student: null,
 				loadedStudents: false,
 				studentIsLoaded: false,
@@ -128,6 +147,56 @@
 						keyboard: true,
 						tooltipDelay: 3600000,
 					},
+					manipulation: 
+					{
+						addNode: function(data, callback) {
+							// filling in the popup DOM elements
+							document.getElementById("operation").innerHTML = "Add Node";
+							document.getElementById("node-id").value = data.id;
+							document.getElementById("node-label").value = data.label;
+							document.getElementById("saveButton").onclick = function(data,callback) {
+								data.id = document.getElementById("node-id").value;
+								data.label = document.getElementById("node-label").value;
+								
+								// clearPopUp();
+								document.getElementById("saveButton").onclick = null;
+								document.getElementById("cancelButton").onclick = null;
+								document.getElementById("network-popUp").style.display = "none";
+
+								callback(data);
+							};
+							document.getElementById("cancelButton").onclick = function() {
+								document.getElementById("saveButton").onclick = null;
+								document.getElementById("cancelButton").onclick = null;
+								document.getElementById("network-popUp").style.display = "none";
+							};
+							document.getElementById("network-popUp").style.display = "block";
+						},
+						editNode: function(data, callback) {
+							// filling in the popup DOM elements
+							document.getElementById("operation").innerHTML = "Edit Node";
+							document.getElementById("node-id").value = data.id;
+							document.getElementById("node-label").value = data.label;
+							document.getElementById("saveButton").onclick = function(data,callback) {
+								data.id = document.getElementById("node-id").value;
+								data.label = document.getElementById("node-label").value;
+								clearPopUp();
+								callback(data);
+							}; 
+							document.getElementById("cancelButton").onclick = this.cancelEdit(callback);
+							document.getElementById("network-popUp").style.display = "block";
+						},
+						addEdge: function(data, callback) {
+							if (data.from == data.to) {
+							var r = confirm("Do you want to connect the node to itself?");
+							if (r == true) {
+								callback(data);
+							}
+							} else {
+							callback(data);
+							}
+						}
+					}
 				},
 			}
 		},
@@ -146,19 +215,22 @@
 			},
 			currentUser(user) {
 				this.$bind(
-					"students",
-					db.collection("students").where("email", "array-contains", user.email)
+					"teachers",
+					db.collection("teachers").where("email", "array-contains", user.email)
 					// studentsDb.orderBy("school_year")
 				);
 			},
-			students(students) {
-				console.log("user has access to:", students);
+			teachers(teachers) {
+				console.log("user has access to:", teachers);
 				this.$set(this, "loadedStudents", true);
 				this.renderGalaxyMap();
 			}
 		},
 		computed: {
 			graph_data() {
+				this.nodes.forEach(element => {
+					element.hidden = false;
+				});
 				return {
 					nodes: new vis.DataSet(this.nodes),
 					edges: new vis.DataSet(this.edges)
@@ -193,41 +265,11 @@
 					return;
 				}
 
-				//ONLY SHOW GRAPH_DATA NODES THAT STUDENT HAS UNLOCKED & COMPLETED
-				//CHECK TOPICS UNLOCKED
-				let studentUnlocked = db.collection("students/" + this.students[0].nsn + "/studentGalaxyMaps").get().then((querySnapshot) => {
-					querySnapshot.forEach((doc) => {
-						// doc.data() is never undefined for query doc snapshots
-						// console.log(doc.id, " => ", doc.data());
-						if (doc.data().hidden == false) {
-							this.graph_data.nodes.update({
-								id: doc.id, 
-								hidden: false, 
-								physics: true,
-								shape: 'dot', 
-								size: 15,
-								font: {
-									color: '#ffffff',
-									size: 25, // px
-									face: 'arial',
-									background: 'none',
-									strokeWidth: 0, // px
-									strokeColor: '#ffffff',
-									align: 'center',
-									multi: false,
-									vadjust: 0,
-									bold: {
-										color: '#343434',
-										size: 14, // px
-										face: 'arial',
-										vadjust: 0,
-										mod: 'bold'
-									},
-								}
-							})
-						}
-					});
-				});
+				//unhide all nodes for TEACHER MODE
+				console.log("all nodes")
+
+				
+
 
 
 				/*================================================
@@ -243,10 +285,10 @@
 				================================================*/
 				
 				this.network.on("selectNode", (params) => {
-					let nsn = this.students[0].nsn
+					
 					//check it see if node clicked is a 'topic' type node. if it is, route to its page
 					if (params.nodes[0].includes("top")) {
-						this.$router.push({ path: "/map/"+params.nodes[0], query: { nsn } })
+						this.$router.push({ path: "/map/"+params.nodes[0]})
 					}
 
 					//get id of clicked node to prop into Galaxy Mission Panel component
@@ -327,31 +369,44 @@
 
 				// this.$unbind("nodes", false)
 
-				// update node to hidden:false (in database)
-				db.collection("students/" + this.students[0].nsn + "/studentGalaxyMaps/").doc(idToUnlock).set({
-					id: idToUnlock,
-					hidden: false,
-					tasksCompleted: '',
-				})
-
-				// zoom on unlocked node
-				var options = {
-					scale: 1, 
-					locked: true, 
-					animation: {
-						duration: 2000,
-						easing: "easeInOutQuart"
-					}
-				}
-				this.network.focus(idToUnlock,options)
-
+				
 				// hide mission panel
 				// var missionPanelElem = document.querySelector(".mission-panel-container")
 				// missionPanelElem.classList.toggle("show");
+			},
+
+			// MANIUPLATION FUNCTIONS
+			clearPopUp() {
+				document.getElementById("saveButton").onclick = null;
+				document.getElementById("cancelButton").onclick = null;
+				document.getElementById("network-popUp").style.display = "none";
+			},
+			cancelEdit(callback) {
+				clearPopUp();
+				callback(null);
+			},
+			saveData(data, callback) {
+				data.id = document.getElementById("node-id").value;
+				data.label = document.getElementById("node-label").value;
+				clearPopUp();
+				callback(data);
 			}
 		}
 	}
 </script>
+
+<style>
+	div.vis-network div.vis-edit-mode {
+		left: initial !important;
+		right: 0 !important;
+	}
+
+	div.vis-network div.vis-manipulation {
+		width: auto;
+		left: initial;
+		right: 0;
+	}
+</style>
 
 
 
@@ -515,4 +570,40 @@
 	.vis-button.vis-zoomExtends:after {
 		content: "⤧";
 	}
+
+
+	/* MANIPULATION ADDON */
+	table.legend_table {
+	font-size: 11px;
+
+	}
+	table.legend_table,
+	td {
+
+	padding: 2px;
+	}
+	div.table_content {
+	width: 80px;
+	text-align: center;
+	}
+	div.table_description {
+	width: 100px;
+	}
+
+	#operation {
+	font-size: 28px;
+	}
+	#network-popUp {
+	display: none;
+	position: absolute;
+	top: 350px;
+	left: 170px;
+	z-index: 299;
+	width: 250px;
+	height: 120px;
+	background-color: #f9f9f9;
+	padding: 10px;
+	text-align: center;
+	}
+
 </style>
