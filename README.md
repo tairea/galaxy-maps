@@ -13,6 +13,10 @@ The concept was inspired by 42's education model and Intra platform: https://www
 ![screenshot of the beginning of Tai Tech galaxy map](https://raw.githubusercontent.com/ian-vai/galaxy-maps/master/readme/screenshot-galaxy-map-tai-tech.png)
 ![screenshot of the concept cover image](https://raw.githubusercontent.com/ian-vai/galaxy-maps/master/readme/tai-wananga-galaxy-maps.png)
 
+
+## Recent Pitch
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vR360DS7vpGgiq3ww3koxyj_NcRI9eQztSOGF9cZifVRAlh1TqYJne1tQURHEFMQjZ8dyF9K01OVHMg/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+
 ## Project setup
 ```
 npm install
