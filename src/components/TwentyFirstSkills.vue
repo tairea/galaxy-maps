@@ -1,5 +1,5 @@
 <template>
-    <div id="twentycskills">
+    <div id="twentycskills" >
         <table>
             <tr>
                 <td class="skillcell1">
@@ -182,10 +182,11 @@
 
 	#twentycskills {
 		width: 100%;
-		margin-top: 40px;
+		margin-top: 20px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+        
 	}
 
 	table {
@@ -193,8 +194,9 @@
 		/* border-collapse:separate;  */
 		/* border-spacing: 0 1em; */
         position: relative; 
-        width: 500px; 
-        left: 50px;
+        width: 80%; 
+        /* left: 50px; */
+        /* border: 1px solid blue; */
 	}
 
 	tr {

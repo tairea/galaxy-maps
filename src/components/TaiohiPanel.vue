@@ -65,7 +65,7 @@
 <style scoped>
 
 	#taiohi-panel {
-		width: 20%;
+		width: 15%;
 		height: 100%;
 		/* background-color: lightgrey; */
 		z-index: 999;
